@@ -23,6 +23,11 @@ function handler (request, response) {
     });
 }
 
+io.configure(function () { 
+  io.set("transports", ["xhr-polling"]); 
+  io.set("polling duration", 10); 
+});
+
 // Delete this row if you want to see debug messages
 io.set('log level', 1);
 
