@@ -7,7 +7,7 @@ $(function(){
   }
 
   // The URL of your web server (the port is set in app.js)
-  var url = 'http://vast-dusk-2513.herokuapp.com/';
+  var url = 'http://localhost:5000/';
 
   var doc = $(document),
   win = $(window),
@@ -29,11 +29,21 @@ $(function(){
 
   var socket = io.connect(url);
 
+  socket.on('joined', function (drawnLines){
+    for (var i = 0; i < drawnLines.length; i++){
+      for (var j = 0; j < drawnLines[i].length; j++){
+        if (j > 0){
+          previousPoint = drawnLines[i][j-1]
+          currentPoint = drawnLines[i][j]
+          drawLine(previousPoint.x, previousPoint.y, currentPoint.x, currentPoint.y)
+        }
+      }
+    }
+  })
   socket.on('moving', function (data) {
 
     if(! (data.id in clients)){
       // a new user has come online. create a cursor for them
-      console.log(data.id);
       cursors[data.id] = $('<div class="cursor">').appendTo('#cursors');
     }
 
@@ -58,13 +68,11 @@ $(function(){
     drawing = true;
     prev.x = e.pageX;
     prev.y = e.pageY;
-
-    // Hide the instructions
-    instructions.fadeOut();
   });
 
   doc.bind('mouseup mouseleave',function(){
     drawing = false;
+    socket.emit('mouseup', {});
   });
 
   var lastEmit = $.now();
