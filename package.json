@@ -1,0 +1,10 @@
+{
+  "name":"node-drawing-game",
+  "version":0.1,
+  "dependencies": {
+    "mongoose": 3.1.2,
+    "socket.io": 0.9.10,
+    "node-static": 0.6.1
+  }
+}
+
