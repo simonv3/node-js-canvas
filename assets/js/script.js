@@ -7,7 +7,7 @@ $(function(){
   }
 
   // The URL of your web server (the port is set in app.js)
-  var url = 'http://localhost:5000/';
+  var url = 'http://vast-dusk-citizen.herokuapp.com/';
 
   var doc = $(document),
   win = $(window),
