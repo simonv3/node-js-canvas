@@ -7,7 +7,7 @@ $(function(){
   }
 
   // The URL of your web server (the port is set in app.js)
-  var url = 'http://localhost:5000/';
+  var url = document.url;
 
   var doc = $(document),
   win = $(window),
@@ -16,6 +16,8 @@ $(function(){
   instructions = $('#instructions');
 
   canvas.attr("width",$("body").width())
+  console.log($(window).height())
+  canvas.attr("height",$(window).height()-46)
   brush = new Image();
   brush.src = 'assets/img/brush10.png';
 
@@ -69,46 +71,42 @@ $(function(){
 
   var prev = {};
 
-  canvas.on('touchstart', function(e){
+  canvas.on('touchmove', function(e){
+    console.log(e.originalEvent.touches[0].pageX);
+  })
+
+  canvas.on('mousemove', function(e){
     e.preventDefault()
     touches = e.changedTouches
-
-    for (var i=0; i< touches.length; i++){
-      ongoingTouches.push(touches[i])
-      ctx.fillRect(touches[i].pageX-2, touches[i].pageY-2, 4, 4)
-    }
   })
-  canvas.on('touchmove', function(e){
-    e.preventDefault()
-    socket.emit('testing', e.touches)
-    var touches = evt.changedTouches
-    ctx.lineWidth=4
-    for(var i=0; i< touches.length; i++){
-      ctx.beginPath()
-    }
-  })
-
-  canvas.on('mousedown',function(e){
+  
+  canvas.on('mousedown touchstart',function(e){
     e.preventDefault();
     drawing = true;
-    prev.x = e.pageX;
-    prev.y = e.pageY;
+    if (e.type == "touchstart"){
+      e.pageX = e.originalEvent.touches[0].pageX
+      e.pageY = e.originalEvent.touches[0].pageY
+    }
+    prev.x = e.pageX
+    prev.y = e.pageY
   });
 
-  doc.bind('mouseup mouseleave',function(){
+  doc.bind('mouseup mouseleav touchend',function(){
     drawing = false;
     socket.emit('mouseup', {});
   });
 
   var lastEmit = $.now();
 
-  doc.on('mousemove',function(e){
+  doc.on('mousemove touchmove',function(e){
     if (drawing){
+      if (e.type == "touchmove"){
+        e.pageX = e.originalEvent.touches[0].pageX
+        e.pageY = e.originalEvent.touches[0].pageY
+      }
       if($.now() - lastEmit > 30){
-        console.log(e)
         socket.emit('mousemove',{
           'type': e.type,
-          'clientX': e.clientX,
           'x': e.pageX,
           'y': e.pageY,
           'drawing': drawing,
@@ -116,18 +114,16 @@ $(function(){
         });
         lastEmit = $.now();
       }
-    }
-
-    // Draw a line for the current user's movement, as it is
-    // not received in the socket.on('moving') event above
-
-    if(drawing){
 
       drawLine(prev.x, prev.y, e.pageX, e.pageY);
 
       prev.x = e.pageX;
       prev.y = e.pageY;
+
     }
+
+    // Draw a line for the current user's movement, as it is
+    // not received in the socket.on('moving') event above
   });
 
 
