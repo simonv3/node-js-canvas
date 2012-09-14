@@ -7,7 +7,7 @@ $(function(){
   }
 
   // The URL of your web server (the port is set in app.js)
-  var url = 'http://vast-dusk-citizen.herokuapp.com/';
+  var url = 'http://localhost:5000/';
 
   var doc = $(document),
   win = $(window),
@@ -15,6 +15,7 @@ $(function(){
   ctx = canvas[0].getContext('2d'),
   instructions = $('#instructions');
 
+  canvas.attr("width",$("body").width())
   brush = new Image();
   brush.src = 'assets/img/brush10.png';
 
@@ -40,6 +41,11 @@ $(function(){
       }
     }
   })
+
+  socket.on('other', function(){
+    console.log('someone joined')
+  })
+
   socket.on('moving', function (data) {
 
     if(! (data.id in clients)){
@@ -63,29 +69,53 @@ $(function(){
 
   var prev = {};
 
-  canvas.on('mousedown touchstart',function(e){
+  canvas.on('touchstart', function(e){
+    e.preventDefault()
+    touches = e.changedTouches
+
+    for (var i=0; i< touches.length; i++){
+      ongoingTouches.push(touches[i])
+      ctx.fillRect(touches[i].pageX-2, touches[i].pageY-2, 4, 4)
+    }
+  })
+  canvas.on('touchmove', function(e){
+    e.preventDefault()
+    socket.emit('testing', e.touches)
+    var touches = evt.changedTouches
+    ctx.lineWidth=4
+    for(var i=0; i< touches.length; i++){
+      ctx.beginPath()
+    }
+  })
+
+  canvas.on('mousedown',function(e){
     e.preventDefault();
     drawing = true;
     prev.x = e.pageX;
     prev.y = e.pageY;
   });
 
-  doc.bind('mouseup mouseleave touchend',function(){
+  doc.bind('mouseup mouseleave',function(){
     drawing = false;
     socket.emit('mouseup', {});
   });
 
   var lastEmit = $.now();
 
-  doc.on('mousemove touchmove',function(e){
-    if($.now() - lastEmit > 30){
-      socket.emit('mousemove',{
-        'x': e.pageX,
-        'y': e.pageY,
-        'drawing': drawing,
-        'id': id
-      });
-      lastEmit = $.now();
+  doc.on('mousemove',function(e){
+    if (drawing){
+      if($.now() - lastEmit > 30){
+        console.log(e)
+        socket.emit('mousemove',{
+          'type': e.type,
+          'clientX': e.clientX,
+          'x': e.pageX,
+          'y': e.pageY,
+          'drawing': drawing,
+          'id': id,
+        });
+        lastEmit = $.now();
+      }
     }
 
     // Draw a line for the current user's movement, as it is
@@ -99,6 +129,7 @@ $(function(){
       prev.y = e.pageY;
     }
   });
+
 
   // Remove inactive clients after 10 seconds of inactivity
   setInterval(function(){

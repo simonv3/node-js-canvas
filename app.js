@@ -40,7 +40,8 @@ var currentLine = new Array()
 
 // Listen for incoming connections from clients
 io.sockets.on('connection', function (socket) {
-  socket.emit('joined', drawnLines);
+  socket.emit('joined', drawnLines)
+  socket.broadcast.emit('other')
   // A mouseup means the user stopped drawing. 
   socket.on('mouseup', function(data){
     // if drawingCounter is greater than 0, a line was drawn
@@ -52,6 +53,8 @@ io.sockets.on('connection', function (socket) {
   })
   // Start listening for mouse move events
   socket.on('mousemove', function (data) {
+      console.log(data)
+    
     if (data.drawing == true){
       drawingCounter += 1
       currentLine.push({"x":data.x,"y":data.y})
@@ -62,4 +65,8 @@ io.sockets.on('connection', function (socket) {
     // to everyone except the originating client.
     socket.broadcast.emit('moving', data);
   });
+  socket.on('testing', function(data){
+    console.log('test-data')
+    console.log(data)
+  })
 });
