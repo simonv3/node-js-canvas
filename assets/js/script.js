@@ -63,21 +63,21 @@ $(function(){
 
   var prev = {};
 
-  canvas.on('mousedown',function(e){
+  canvas.on('mousedown touchstart',function(e){
     e.preventDefault();
     drawing = true;
     prev.x = e.pageX;
     prev.y = e.pageY;
   });
 
-  doc.bind('mouseup mouseleave',function(){
+  doc.bind('mouseup mouseleave touchend',function(){
     drawing = false;
     socket.emit('mouseup', {});
   });
 
   var lastEmit = $.now();
 
-  doc.on('mousemove',function(e){
+  doc.on('mousemove touchmove',function(e){
     if($.now() - lastEmit > 30){
       socket.emit('mousemove',{
         'x': e.pageX,
