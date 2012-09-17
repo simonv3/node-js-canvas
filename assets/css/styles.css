@@ -38,25 +38,27 @@ section, footer, header{
 	display: block;
 }
 
+div#page_loader {
+  position: absolute;
+  top: 0;
+  bottom: 0%;
+  left: 0;
+  right: 0%;
+  width:100%;
+  height:100%;
+  background-color: rgba(0,0,0,.6);
+  z-index: 99;
+}
 
+div#page_loader img{
+  width:24px;
+  height:24px;
+  display:block;
+  margin:10% auto 0 auto;
+}
 /*-------------------------
 	Main Area
 --------------------------*/
-
-hgroup{
-	position: fixed;
-	background-color: rgba(255, 255, 255, 0.7);
-	width: 400px;
-	height: 78px;
-	top: 50%;
-	left: 50%;
-	margin: -120px 0 0 -225px;
-	text-align: center;
-	padding: 25px;
-	border-radius: 10px;
-	box-shadow: 0 0 3px rgba(100, 100, 100, 0.1), 0 3px 1px #D4D4D4;
-	color: #555;
-}
 
 h1{
 	font-size: 22px;
@@ -131,3 +133,5 @@ footer a i b{
 	color:#c92020;
 	font-weight: normal;
 }
+
+

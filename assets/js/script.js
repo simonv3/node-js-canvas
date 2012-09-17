@@ -1,4 +1,4 @@
-//code with help from Simon Sarris http://jsfiddle.net/NWBV4/10/
+// Code with help from Simon Sarris http://jsfiddle.net/NWBV4/10/
 
 function Pen(canvas) {
 
@@ -39,6 +39,7 @@ function Pen(canvas) {
 
     socket.on('joinedCallback', function(assignedID, userIDs, drawnLines){
       console.log('you joined, your ID is: '+ assignedID)
+      document.getElementById("page_loader").style.display = 'none';
       tool.myID = assignedID
       for (var i=0 ; i < userIDs.length ; i++){
         tool.others.push([])
@@ -46,9 +47,7 @@ function Pen(canvas) {
       for (var i=0; i < drawnLines.length ; i++){
         drawPoints(context, drawnLines[i])
         memCtx.clearRect(0, 0, width, height);
-        
         memCtx.drawImage(canvas, 0, 0);
-        
       }
     })
     socket.on('otherUserJoined', function(userIDs){
