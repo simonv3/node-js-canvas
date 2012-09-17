@@ -69,6 +69,21 @@ function Pen(canvas) {
       })
     })
 
+    this.touchstart = function(ev){
+      console.log("touchstart")
+        tool.points.push({
+            x: ev.touches[0].pageX,
+            y: ev.touches[0].pageY,
+        });
+        tool.started = true;
+        socket.emit('mousedown', {
+              'x': ev.touches[0].pageX,
+              'y': ev.touches[0].pageY,
+              'userID': tool.myID,
+              'started':tool.started,
+        })
+    }
+
     this.mousedown = function(ev) {
         tool.points.push({
             x: ev._x,
@@ -82,6 +97,7 @@ function Pen(canvas) {
               'started':tool.started,
         })
     };
+
     //when we receive a moving message
     socket.on('othersMoving', function(data){
       context.clearRect(0, 0, width, height);
@@ -94,6 +110,28 @@ function Pen(canvas) {
       })
       drawPoints(context, tool.others[data.id])
     })
+    this.touchmove = function(ev) {
+        if (tool.started) {
+
+          if($.now() - lastEmit > 10){
+            socket.emit('mousemove', {
+              'x': ev.touches[0].pageX,
+              'y': ev.touches[0].pageY,
+              'userID': tool.myID,
+            })
+            lastEmit = $.now()
+          }
+
+            context.clearRect(0, 0, width, height);
+            // put back the saved content
+            context.drawImage(memCanvas, 0, 0);
+            tool.points.push({
+                x: ev.touches[0].pageX,
+                y: ev.touches[0].pageY,
+            });
+            drawPoints(context, tool.points);
+        }
+    };
 
     this.mousemove = function(ev) {
         if (tool.started) {
@@ -123,6 +161,20 @@ function Pen(canvas) {
         memCtx.drawImage(canvas, 0, 0);
         tool.others[data] = [];
     })
+
+    this.touchend = function(ev) {
+        if (tool.started) {
+            tool.started = false;
+            // When the pen is done, save the resulting context
+            // to the in-memory canvas
+            memCtx.clearRect(0, 0, width, height);
+            memCtx.drawImage(canvas, 0, 0);
+            tool.points = [];
+            socket.emit('mouseup', tool.myID)
+        }
+
+    };
+
 
     this.mouseup = function(ev) {
         if (tool.started) {
@@ -191,7 +243,10 @@ setTimeout(function() {
 
 
     canvas.addEventListener('mousedown', ev_canvas, false);
+    canvas.addEventListener('touchstart', ev_canvas, false)
     canvas.addEventListener('mousemove', ev_canvas, false);
+    canvas.addEventListener('touchmove', ev_canvas, false);
     canvas.addEventListener('mouseup', ev_canvas, false);
+    canvas.addEventListener('touchend', ev_canvas, false);
 }, 500);
 

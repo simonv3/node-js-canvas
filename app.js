@@ -36,7 +36,6 @@ io.set('log level', 1);
 var currentID = 1;
 var lineID = 0
 var drawnLines = []
-console.log(drawnLines)
 
 // A buffer for the user's Currently drawn line
 
@@ -52,7 +51,6 @@ io.sockets.on('connection', function (socket) {
 
     //add a currentLine for the user
     currentLine.push([])
-    
     //tell everyone that someone joined
     socket.broadcast.emit('otherUserJoined', userIDs)
 
@@ -65,6 +63,7 @@ io.sockets.on('connection', function (socket) {
 
   // A mousedown means a user started drawing.
   socket.on('mousedown', function(data){
+    console.log('starting drawing');
     //we're drawing a new line, find the user's current line
     currentLine[data.userID-1].push(data)
     //pass the data along to clients
