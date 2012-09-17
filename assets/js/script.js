@@ -1,187 +1,197 @@
-$(function(){
+//code with help from Simon Sarris http://jsfiddle.net/NWBV4/10/
 
-  // This demo depends on the canvas element
-  if(!('getContext' in document.createElement('canvas'))){
-    alert('Sorry, it looks like your browser does not support canvas!');
-    return false;
-  }
+function Pen(canvas) {
 
-  // The URL of your web server (the port is set in app.js)
-  var url = document.url;
+    // The URL of your web server (the port is set in app.js)
+    var url = document.url;
 
-  var doc = $(document),
-  win = $(window),
-  canvas = $('#paper'),
-  ctx = canvas[0].getContext('2d'),
-  instructions = $('#instructions');
+    //keeping track of how many clients there are
+    var cursors = {};
 
-  canvas.attr("width",$("body").width())
-  console.log($(window).height())
-  canvas.attr("height",$(window).height()-46)
-  brush = new Image();
-  brush.src = 'assets/img/brush10.png';
+    //setting up the websocket
+    var socket = io.connect(url);
+    var lastEmit = $.now();
 
-  // Generate an unique ID
-  var id = Math.round($.now()*Math.random());
+    this.myID = 0;
 
-  // A flag for drawing activity
-  var drawing = false;
+    var tool = this;
+    var context = canvas.getContext('2d');
+    this.started = false;
+    var move_count = 0;
+    context.lineWidth = 2;
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    var lastx = 0;
+    var lasty = 0;
+    var width = canvas.width;
+    var height =canvas.height;
+    // create an in-memory canvas
+    var memCanvas = document.createElement('canvas');
+    memCanvas.width = width
+    memCanvas.height = height
+    var memCtx = memCanvas.getContext('2d');
+    this.points = []
+    this.others = []
 
-  var clients = {};
-  var cursors = {};
+    //tell the socket you are joining, and register your id
 
-  var socket = io.connect(url);
+    socket.emit("joining")
 
-  socket.on('joined', function (drawnLines){
-    for (var i = 0; i < drawnLines.length; i++){
-      for (var j = 0; j < drawnLines[i].length; j++){
-        if (j > 0){
-          previousPoint = drawnLines[i][j-1]
-          currentPoint = drawnLines[i][j]
-          drawLine(previousPoint.x, previousPoint.y, currentPoint.x, currentPoint.y)
-        }
+    socket.on('joinedCallback', function(assignedID, userIDs, drawnLines){
+      console.log('you joined, your ID is: '+ assignedID)
+      tool.myID = assignedID
+      for (var i=0 ; i < userIDs.length ; i++){
+        tool.others.push([])
       }
-    }
-  })
-
-  socket.on('other', function(){
-    console.log('someone joined')
-  })
-
-  socket.on('moving', function (data) {
-
-    if(! (data.id in clients)){
-      // a new user has come online. create a cursor for them
-      cursors[data.id] = $('<div class="cursor">').appendTo('#cursors');
-    }
-
-    // Is the user drawing?
-    if(data.drawing && clients[data.id]){
-
-      // Draw a line on the canvas. clients[data.id] holds
-      // the previous position of this user's mouse pointer
-
-      drawLine(clients[data.id].x, clients[data.id].y, data.x, data.y);
-    }
-
-    // Saving the current client state
-    clients[data.id] = data;
-    clients[data.id].updated = $.now();
-  });
-
-  var prev = {};
-
-  canvas.on('touchmove', function(e){
-    console.log(e.originalEvent.touches[0].pageX);
-  })
-
-  canvas.on('mousemove', function(e){
-    e.preventDefault()
-    touches = e.changedTouches
-  })
-  
-  canvas.on('mousedown touchstart',function(e){
-    e.preventDefault();
-    drawing = true;
-    if (e.type == "touchstart"){
-      e.pageX = e.originalEvent.touches[0].pageX
-      e.pageY = e.originalEvent.touches[0].pageY
-    }
-    prev.x = e.pageX
-    prev.y = e.pageY
-  });
-
-  doc.bind('mouseup mouseleav touchend',function(){
-    drawing = false;
-    socket.emit('mouseup', {});
-  });
-
-  var lastEmit = $.now();
-
-  doc.on('mousemove touchmove',function(e){
-    if (drawing){
-      if (e.type == "touchmove"){
-        e.pageX = e.originalEvent.touches[0].pageX
-        e.pageY = e.originalEvent.touches[0].pageY
+      for (var i=0; i < drawnLines.length ; i++){
+        drawPoints(context, drawnLines[i])
+        memCtx.clearRect(0, 0, width, height);
+        
+        memCtx.drawImage(canvas, 0, 0);
+        
       }
-      if($.now() - lastEmit > 30){
-        socket.emit('mousemove',{
-          'type': e.type,
-          'x': e.pageX,
-          'y': e.pageY,
-          'drawing': drawing,
-          'id': id,
+    })
+    socket.on('otherUserJoined', function(userIDs){
+      console.log('new user joined')
+      tool.others = []
+      for (i=0 ; i < userIDs.length ; i++){
+        tool.others.push([])
+      }
+    })
+
+
+    socket.on('othersStartDrawing', function(data, currentLineID){
+      tool.others[data.id] = []
+      tool.others[data.id].push({
+        x: data.x,
+        y: data.y,
+        lineID: currentLineID
+      })
+    })
+
+    this.mousedown = function(ev) {
+        tool.points.push({
+            x: ev._x,
+            y: ev._y
         });
-        lastEmit = $.now();
-      }
+        tool.started = true;
+        socket.emit('mousedown', {
+              'x': ev.pageX,
+              'y': ev.pageY,
+              'userID': tool.myID,
+              'started':tool.started,
+        })
+    };
+    //when we receive a moving message
+    socket.on('othersMoving', function(data){
+      context.clearRect(0, 0, width, height);
+      context.drawImage(memCanvas, 0, 0);
+      //console.log(tool.others[data.id][0].lineID)
+      tool.others[data.id].push({
+        x: data.x,
+        y: data.y,
+        lineID:tool.others[data.id][0].lineID
+      })
+      drawPoints(context, tool.others[data.id])
+    })
 
-      drawLine(prev.x, prev.y, e.pageX, e.pageY);
+    this.mousemove = function(ev) {
+        if (tool.started) {
 
-      prev.x = e.pageX;
-      prev.y = e.pageY;
+          if($.now() - lastEmit > 10){
+            socket.emit('mousemove', {
+              'x': ev.pageX,
+              'y': ev.pageY,
+              'userID': tool.myID,
+            })
+            lastEmit = $.now()
+          }
 
+            context.clearRect(0, 0, width, height);
+            // put back the saved content
+            context.drawImage(memCanvas, 0, 0);
+            tool.points.push({
+                x: ev._x,
+                y: ev._y
+            });
+            drawPoints(context, tool.points);
+        }
+    };
+
+    socket.on("othersStoppedDrawing", function(data){
+        memCtx.clearRect(0,0, width, height);
+        memCtx.drawImage(canvas, 0, 0);
+        tool.others[data] = [];
+    })
+
+    this.mouseup = function(ev) {
+        if (tool.started) {
+            tool.started = false;
+            // When the pen is done, save the resulting context
+            // to the in-memory canvas
+            memCtx.clearRect(0, 0, width, height);
+            memCtx.drawImage(canvas, 0, 0);
+            tool.points = [];
+            socket.emit('mouseup', tool.myID)
+        }
+
+    };
+
+    
+
+
+}
+
+// The general-purpose event handler. This function determines the mouse position relative to the canvas element.
+
+function ev_canvas(ev) {
+    if (false) {
+        ev._x = ev.touches[0].clientX;
+        ev._y = ev.touches[0].clientY; // CH: Is there a better way to do this?
+    }
+    else if (ev.layerX || ev.layerX == 0) { // Firefox
+        ev._x = ev.layerX;
+        ev._y = ev.layerY;
+    }
+    else if (ev.offsetX || ev.offsetX == 0) { // Opera
+        ev._x = ev.offsetX;
+        ev._y = ev.offsetY;
     }
 
-    // Draw a line for the current user's movement, as it is
-    // not received in the socket.on('moving') event above
-  });
-
-
-  // Remove inactive clients after 10 seconds of inactivity
-  setInterval(function(){
-
-    for(ident in clients){
-      if($.now() - clients[ident].updated > 10000){
-
-        // Last update was more than 10 seconds ago. 
-        // This user has probably closed the page
-				
-				delete clients[ident];
-			}
-		}
-		
-	},10000);
-
-  function drawLine(fromx, fromy, tox, toy){
-    var halfBrushW = brush.width/2;
-    var halfBrushH = brush.height/2;
-
-  var start = { x:fromx, y:fromy };
-  var end = { x:tox, y:toy };
-
-  var distance = parseInt( Trig.distanceBetween2Points( start, end ) );
-  var angle = Trig.angleBetween2Points( start, end );
-
-  var x,y;
-
-  for ( var z=0; (z<=distance || z==0); z++ ) {
-    x = start.x + (Math.sin(angle) * z) - halfBrushW;
-    y = start.y + (Math.cos(angle) * z) - halfBrushH;
-    ctx.drawImage(brush, x, y);
-  }
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.moveTo(fromx, fromy);
-    ctx.lineWidth = 10;
-    //ctx.quadraticCurveTo(fromx + (tox - fromx)/20,fromy + (toy - fromy)/20, tox, toy);
-    ctx.stroke();
-	}
-
-});
-
-var Trig = {
-    distanceBetween2Points: function ( point1, point2 ) {
- 
-        var dx = point2.x - point1.x;
-        var dy = point2.y - point1.y;
-        return Math.sqrt( Math.pow( dx, 2 ) + Math.pow( dy, 2 ) );
-    },
- 
-    angleBetween2Points: function ( point1, point2 ) {
- 
-        var dx = point2.x - point1.x;
-        var dy = point2.y - point1.y;
-        return Math.atan2( dx, dy );
+    ev._x = ev._x + 0.5;
+    //ev._y = ev._y + 0.5;
+    // Call appropriate event handler
+    var func = PEN[ev.type];
+    if (func) {
+        func(ev);
     }
 }
+
+function drawPoints(ctx, points) {
+    if (points.length < 6) {
+        var b = points[0];
+        ctx.beginPath(), ctx.arc(b.x, b.y, ctx.lineWidth / 2, 0, Math.PI * 2, !0), ctx.closePath(), ctx.fill();
+        return
+    }
+    ctx.beginPath(), ctx.moveTo(points[0].x, points[0].y);
+    for (i = 1; i < points.length - 2; i++) {
+        var c = (points[i].x + points[i + 1].x) / 2,
+            d = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, c, d)
+    }
+    ctx.quadraticCurveTo(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y), ctx.stroke()
+}
+
+setTimeout(function() {
+    // Bind canvas to listeners
+    var canvas = document.getElementById('paper');
+    canvas.width = $(window).width()
+    canvas.height = $(window).height()-46
+    PEN = new Pen(canvas);
+
+
+    canvas.addEventListener('mousedown', ev_canvas, false);
+    canvas.addEventListener('mousemove', ev_canvas, false);
+    canvas.addEventListener('mouseup', ev_canvas, false);
+}, 500);
 

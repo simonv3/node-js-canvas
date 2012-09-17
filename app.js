@@ -33,40 +33,73 @@ io.configure(function () {
 // Delete this row if you want to see debug messages
 io.set('log level', 1);
 
+var currentID = 1;
+var lineID = 0
+var drawnLines = []
+console.log(drawnLines)
 
-var drawingCounter = 0
-var drawnLines = new Array()
-var currentLine = new Array()
+// A buffer for the user's Currently drawn line
+
+var currentLine = []
+var userIDs= new Array()
 
 // Listen for incoming connections from clients
 io.sockets.on('connection', function (socket) {
-  socket.emit('joined', drawnLines)
-  socket.broadcast.emit('other')
+
+  socket.on('joining', function(){
+    userIDs.push(currentID)
+    console.log("user id " + currentID + " joined")
+
+    //add a currentLine for the user
+    currentLine.push([])
+    
+    //tell everyone that someone joined
+    socket.broadcast.emit('otherUserJoined', userIDs)
+
+    //tell the user about everything else
+    socket.emit('joinedCallback', currentID, userIDs, drawnLines)
+    currentID += 1
+
+
+  })
+
+  // A mousedown means a user started drawing.
+  socket.on('mousedown', function(data){
+    //we're drawing a new line, find the user's current line
+    currentLine[data.userID-1].push(data)
+    //pass the data along to clients
+    socket.broadcast.emit("othersStartDrawing", data)
+  })
+
   // A mouseup means the user stopped drawing. 
   socket.on('mouseup', function(data){
-    // if drawingCounter is greater than 0, a line was drawn
-    if (drawingCounter > 0){
-      drawingCounter = 0
-      drawnLines.push(currentLine)
-      currentLine = new Array()
-    }
+    //console.log(currentLine[data-1])
+    
+    //the user stopped drawing a line, push it to the drawnlines
+    drawnLines.push(currentLine[data-1])
+    //clear the current line buffer for the current user
+    currentLine[data-1] = []
+    //pass the data along
+    socket.broadcast.emit("othersStoppedDrawing", data)
   })
+
   // Start listening for mouse move events
   socket.on('mousemove', function (data) {
-      console.log(data)
-    
-    if (data.drawing == true){
-      drawingCounter += 1
-      currentLine.push({"x":data.x,"y":data.y})
-    }
+      //push the data to the current line
+    currentLine[data.userID-1].push({"x":data.x,"y":data.y})
+
     //console.log(data);
     //add to database
     // This line sends the event (broadcasts it)
     // to everyone except the originating client.
-    socket.broadcast.emit('moving', data);
+    socket.broadcast.emit('othersMoving', data);
   });
   socket.on('testing', function(data){
     console.log('test-data')
     console.log(data)
   })
+
+  //set the user ID for the next user
+
+
 });
