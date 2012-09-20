@@ -30,6 +30,21 @@ function Pen(canvas) {
     memCanvas.width = width
     memCanvas.height = height
     var memCtx = memCanvas.getContext('2d');
+
+
+    //canvas for others
+    var oCanvas = canvas
+    var oContext = canvas.getContext('2d');
+    oContext.lineWidth = 2;
+    oContext.lineJoin = 'round';
+    oContext.lineCap = 'round';
+
+    var oMemCanvas = document.createElement('canvas');
+    oMemCanvas.width = width
+    oMemCanvas.height = height
+    var oMCtx = oMemCanvas.getContext('2d');
+
+    this.userColor = "#000000"
     this.points = []
     this.others = []
 
@@ -45,9 +60,9 @@ function Pen(canvas) {
         tool.others.push([])
       }
       for (var i=0; i < drawnLines.length ; i++){
-        drawPoints(context, drawnLines[i])
-        memCtx.clearRect(0, 0, width, height);
-        memCtx.drawImage(canvas, 0, 0);
+        drawPoints(oContext, drawnLines[i])
+        oMCtx.clearRect(0, 0, width, height);
+        oMCtx.drawImage(canvas, 0, 0);
       }
     })
     socket.on('otherUserJoined', function(userIDs){
@@ -79,12 +94,12 @@ function Pen(canvas) {
         initY = ev.touches[0].pageY
       }
       tool.points.push({
-            x: initX,
+            x: initX +.5,
             y: initY
         });
         tool.started = true;
         socket.emit('mousedown', {
-              'x': initX,
+              'x': initX + .5,
               'y': initY,
               'userID': tool.myID,
               'started':tool.started,
@@ -99,14 +114,14 @@ function Pen(canvas) {
 
     //when we receive a moving message
     socket.on('othersMoving', function(data){
-      context.clearRect(0, 0, width, height);
-      context.drawImage(memCanvas, 0, 0);
+      oContext.clearRect(0, 0, width, height);
+      oContext.drawImage(oMemCanvas, 0, 0);
       tool.others[data.id].push({
         x: data.x,
         y: data.y,
         lineID:tool.others[data.id][0].lineID
       })
-      drawPoints(context, tool.others[data.id])
+      drawPoints(oContext, tool.others[data.id])
     })
 
     function movingPath(ev){
@@ -120,7 +135,7 @@ function Pen(canvas) {
           }
           if($.now() - lastEmit > 10){
             socket.emit('mousemove', {
-              'x': currentX,
+              'x': currentX + 0.5,
               'y': currentY,
               'userID': tool.myID,
             })
@@ -131,7 +146,7 @@ function Pen(canvas) {
             // put back the saved content
             context.drawImage(memCanvas, 0, 0);
             tool.points.push({
-                x: currentX,
+                x: currentX + 0.5,
                 y: currentY,
             });
             drawPoints(context, tool.points);
@@ -139,7 +154,7 @@ function Pen(canvas) {
     }
 
     //treat touchmove and mousemove the same
-    this.touchmove = function(ev) { movingPath(ev) }
+    //this.touchmove = function(ev) { movingPath(ev) }
 
     this.mousemove = function(ev) { movingPath(ev) };
 
@@ -152,8 +167,10 @@ function Pen(canvas) {
     function endPath(ev){
         if (tool.started) {
             tool.started = false;
+
             // When the pen is done, save the resulting context
             // to the in-memory canvas
+
             memCtx.clearRect(0, 0, width, height);
             memCtx.drawImage(canvas, 0, 0);
             tool.points = [];
@@ -163,9 +180,14 @@ function Pen(canvas) {
 
     }
 
-    this.touchend = function(ev) { endPath(ev) };
+    //treat touchend and mouseup as the same
+    //this.touchend = function(ev) { endPath(ev) };
 
     this.mouseup = function(ev) { endPath(ev) };
+
+    this.changecolor = function(color){
+      context.strokeStyle=color;
+    }
 
 
 
@@ -174,7 +196,7 @@ function Pen(canvas) {
 // The general-purpose event handler. This function determines the mouse position relative to the canvas element.
 
 function ev_canvas(ev) {
-    if (false) {
+    /*if (false) {
         ev._x = ev.touches[0].clientX;
         ev._y = ev.touches[0].clientY; // CH: Is there a better way to do this?
     }
@@ -188,9 +210,19 @@ function ev_canvas(ev) {
     }
 
     ev._x = ev._x + 0.5;
-    //ev._y = ev._y + 0.5;
+    ev._y = ev._y + 0.5;*/
+    var func;
+    
+    if (ev.type === "touchstart"){
+      func = PEN['mousedown']
+    } else if (ev.type === "touchmove"){
+      func = PEN['mousemove']
+    } else if (ev.type === "touchend"){
+      func = PEN['mouseup']
+    } else {
+      func = PEN[ev.type]
+    }
     // Call appropriate event handler
-    var func = PEN[ev.type];
     if (func) {
         func(ev);
     }
@@ -226,6 +258,12 @@ setTimeout(function() {
     canvas.addEventListener('touchmove', ev_canvas, false);
     canvas.addEventListener('mouseup', ev_canvas, false);
     canvas.addEventListener('touchend', ev_canvas, false);
+
+    $("#colors li").click( function(){
+      console.log('changing colors')
+      var func = PEN['changecolor']
+      func($(this).css("color"))
+    })
 
 }, 500);
 
