@@ -31,13 +31,6 @@ function Pen(canvas) {
     memCanvas.height = height
     var memCtx = memCanvas.getContext('2d');
 
-    var othersCanvas = document.createElement('canvas');
-    var othersContext = othersCanvas.getContext('2d');
-    othersContext.lineWidth = 2;
-    othersContext.lineJoin = 'round';
-    context.lineCap = 'round';
-    othersCanvas.width = width;
-    othersCanvas.height = height;
 
 
     //set up storage for you and others
@@ -52,11 +45,12 @@ function Pen(canvas) {
       console.log('you joined, your ID is: '+ assignedID)
       document.getElementById("page_loader").style.display = 'none';
       tool.myID = assignedID
+      console.log(drawnLines)
       for (var i=0 ; i < userIDs.length ; i++){
         tool.others.push([])
       }
       for (var i=0; i < drawnLines.length ; i++){
-        drawPoints(context, drawnLines[i])
+        drawPastLines(context, drawnLines[i])
         //memCtx.clearRect(0, 0, width, height);
         //memCtx.drawImage(canvas, 0, 0);
       }
@@ -117,7 +111,7 @@ function Pen(canvas) {
         y: data.y,
         lineID:tool.others[data.id][0].lineID
       })
-      drawPoints(oContext, tool.others[data.id])
+      drawPoints(context, tool.others[data.id])
     })
 
     function movingPath(ev){
@@ -223,17 +217,40 @@ function ev_canvas(ev) {
     }
 }
 
+function drawPastLines(ctx, points){
+// move to the first point
+   ctx.moveTo(points[0].x, points[0].y);
+
+  if (points.length == 2 ){
+    ctx.lineTo(points[1].x,points[1].y)
+  } else if (points.length == 1){
+   } else {
+
+   for (i = 1; i < points.length - 2; i ++)
+   {
+      console.log("drawing point")
+      var xc = (points[i].x + points[i + 1].x) / 2;
+      var yc = (points[i].y + points[i + 1].y) / 2;
+      ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+   }
+ ctx.quadraticCurveTo(points[i].x, points[i].y, points[i+1].x,points[i+1].y);
+   console.log("drawing line")
+  }
+  ctx.stroke()
+ // curve through the last two points
+ }
+
 function drawPoints(ctx, points) {
     /*if (points.length < 6) {
         var b = points[0];
         ctx.beginPath(), ctx.arc(b.x, b.y, ctx.lineWidth / 2, 0, Math.PI * 2, !0), ctx.closePath(), ctx.fill();
         return
     }*/
-    ctx.beginPath() 
-    
+    ctx.beginPath()
+
     //get the slope of a the previous segment.
     if (points.length > 3){
-      
+
       var i = points.length-3
 
       //find the midpoint of the current line. 
@@ -335,7 +352,7 @@ function intersectLineLine (a1, a2, b1, b2) {
         var ua = ua_t / u_b;
         var ub = ub_t / u_b;
         if (Math.abs(ua) > 3 || Math.abs(ub) > 3){
-          console.log(a1.x +" "+ a1.y + " " + ua_t + " / " + u_b)
+          //console.log(a1.x +" "+ a1.y + " " + ua_t + " / " + u_b)
           result="straight"
         } else {
         if(ua && ub){
