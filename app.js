@@ -63,7 +63,6 @@ io.sockets.on('connection', function (socket) {
 
   // A mousedown means a user started drawing.
   socket.on('mousedown', function(data){
-    console.log('starting drawing');
     //we're drawing a new line, find the user's current line
     currentLine[data.userID-1].push(data)
     //pass the data along to clients
@@ -85,7 +84,12 @@ io.sockets.on('connection', function (socket) {
   // Start listening for mouse move events
   socket.on('mousemove', function (data) {
       //push the data to the current line
-    currentLine[data.userID-1].push({"x":data.x,"y":data.y})
+    currentLine[data.userID-1].push({
+      "x":data.x,
+      "y":data.y,
+      "color":data.color,
+      "size":data.size,
+    })
 
     //console.log(data);
     //add to database

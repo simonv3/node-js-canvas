@@ -22,10 +22,6 @@
     <canvas id="paper" width="300" height="300" onclick="void(0)">
       Your browser needs to support canvas for this to work!
       </canvas>
-    <canvas id="othersPaper" width="300" height="300" onclick="void(0)">
-      Your browser needs to support canvas for this to work!
-    </canvas>
-
     <footer>
     <ul id="colors">
       <li id="blue">
@@ -33,6 +29,12 @@
         </li>
         <li id="red">
         red
+      </li>
+<li id="black">
+        black
+        </li>
+        <li id="erase">
+        erase
       </li>
 
       </ul>
@@ -45,6 +47,7 @@
     <!--<script src="assets/js/thumbs.js"></script>-->
     <script src="assets/js/script.js"></script>
     <script>
+      document.onselectstart = function(){ return false;}
       document.ontouchmove = function(e) {e.preventDefault()};
     </script>
 

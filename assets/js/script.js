@@ -17,8 +17,11 @@ function Pen(canvas) {
     var tool = this;
     var context = canvas.getContext('2d');
     this.started = false;
+    this.color = "#333";
+    this.size = 1;
     var move_count = 0;
-    context.lineWidth = 2;
+    context.strokeStyle = "#333";
+    context.lineWidth = 1;
     context.lineJoin = 'round';
     context.lineCap = 'round';
     var lastx = 0;
@@ -45,15 +48,18 @@ function Pen(canvas) {
       console.log('you joined, your ID is: '+ assignedID)
       document.getElementById("page_loader").style.display = 'none';
       tool.myID = assignedID
-      console.log(drawnLines)
       for (var i=0 ; i < userIDs.length ; i++){
         tool.others.push([])
       }
-      for (var i=0; i < drawnLines.length ; i++){
-        drawPastLines(context, drawnLines[i])
+      if (drawnLines.length > 0){
+        for (var i = 0; i < drawnLines.length; i++){
+          drawPastLines(context, drawnLines[i])
+
         //memCtx.clearRect(0, 0, width, height);
         //memCtx.drawImage(canvas, 0, 0);
+        }
       }
+      console.log("drawing color: " + tool.color);
     })
     socket.on('otherUserJoined', function(userIDs){
       console.log('new user joined')
@@ -69,7 +75,9 @@ function Pen(canvas) {
       tool.others[data.id].push({
         x: data.x,
         y: data.y,
-        lineID: currentLineID
+        lineID: currentLineID,
+        color:data.color,
+        size:data.size,
       })
     })
 
@@ -84,15 +92,19 @@ function Pen(canvas) {
         initY = ev.touches[0].pageY
       }
       tool.points.push({
-            x: initX +.5,
-            y: initY
+            x: initX,
+            y: initY,
+            size:tool.size,
+            color:tool.color,
         });
         tool.started = true;
         socket.emit('mousedown', {
-              'x': initX + .5,
+              'x': initX,
               'y': initY,
               'userID': tool.myID,
               'started':tool.started,
+              'color':tool.color,
+              'size':tool.size,
         })
     }
 
@@ -109,7 +121,9 @@ function Pen(canvas) {
       tool.others[data.id].push({
         x: data.x,
         y: data.y,
-        lineID:tool.others[data.id][0].lineID
+        lineID:tool.others[data.id][0].lineID,
+        color:data.color,
+        size:tool.size,
       })
       drawPoints(context, tool.others[data.id])
     })
@@ -128,6 +142,8 @@ function Pen(canvas) {
               'x': currentX + 0.5,
               'y': currentY,
               'userID': tool.myID,
+              'color':tool.color,
+              'size':tool.size,
             })
             lastEmit = $.now()
           }
@@ -135,9 +151,12 @@ function Pen(canvas) {
             //context.clearRect(0, 0, width, height);
             // put back the saved content
             //context.drawImage(memCanvas, 0, 0);
+          console.log("tool size " + tool.size);
             tool.points.push({
-                x: currentX + 0.5,
+                x: currentX,
                 y: currentY,
+                color:tool.color,
+                size:tool.size,
             });
             drawPoints(context, tool.points);
         }
@@ -176,8 +195,14 @@ function Pen(canvas) {
 
     this.changecolor = function(color){
       context.strokeStyle=color;
+      tool.color = color;
     }
 
+    this.setsize = function(size){
+      console.log("setting size")
+      context.strokeWidth=size;
+      tool.size = size;
+    }
 
 
 }
@@ -201,7 +226,6 @@ function ev_canvas(ev) {
     ev._x = ev._x + 0.5;
     ev._y = ev._y + 0.5;*/
     var func;
-    
     if (ev.type === "touchstart"){
       func = PEN['mousedown']
     } else if (ev.type === "touchmove"){
@@ -218,27 +242,30 @@ function ev_canvas(ev) {
 }
 
 function drawPastLines(ctx, points){
-// move to the first point
-   ctx.moveTo(points[0].x, points[0].y);
-
+  // move to the first point
+  ctx.beginPath()
+  ctx.strokeStyle = points[0].color;
+  ctx.lineWidth = points[0].size;
+  ctx.moveTo(points[0].x, points[0].y);
   if (points.length == 2 ){
     ctx.lineTo(points[1].x,points[1].y)
   } else if (points.length == 1){
-   } else {
+  } else {
 
-   for (i = 1; i < points.length - 2; i ++)
-   {
-      console.log("drawing point")
+    for (i = 1; i < points.length - 2; i ++)
+    {
       var xc = (points[i].x + points[i + 1].x) / 2;
       var yc = (points[i].y + points[i + 1].y) / 2;
+      
       ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
-   }
- ctx.quadraticCurveTo(points[i].x, points[i].y, points[i+1].x,points[i+1].y);
-   console.log("drawing line")
+    }
+    ctx.quadraticCurveTo(points[i].x, points[i].y, points[i+1].x,points[i+1].y);
   }
   ctx.stroke()
- // curve through the last two points
- }
+  ctx.closePath()
+
+  // curve through the last two points
+}
 
 function drawPoints(ctx, points) {
     /*if (points.length < 6) {
@@ -246,32 +273,34 @@ function drawPoints(ctx, points) {
         ctx.beginPath(), ctx.arc(b.x, b.y, ctx.lineWidth / 2, 0, Math.PI * 2, !0), ctx.closePath(), ctx.fill();
         return
     }*/
-    ctx.beginPath()
+  ctx.beginPath()
+  ctx.strokeStyle = points[0].color
+  ctx.lineWidth = points[0].size
+  console.log(points[0])
+  //get the slope of a the previous segment.
+  if (points.length > 3){
 
-    //get the slope of a the previous segment.
-    if (points.length > 3){
+    var i = points.length-3
 
-      var i = points.length-3
+    //find the midpoint of the current line. 
+    var midx = (points[i+2].x+points[i+1].x)/2;
+    var midy = (points[i+2].y+points[i+1].y)/2;
+    var midPoint = {
+      "x":midx,
+      "y":midy,
+    }
+    var midm = (points[i+2].y - points[i+1].y).toFixed(4)/(points[i+2].x - points[i+1].x).toFixed(4)
+    if (midm != Infinity || midm != -Infinity){
+      perpMidM = (1/midm) * -1;
+      perpMidB = perpMidM * midx - midy;
+      //find arbitrary other point
+      var arbx = midx+1;
+      var arby = perpMidM * arbx + perpMidB;
 
-      //find the midpoint of the current line. 
-      var midx = (points[i+2].x+points[i+1].x)/2;
-      var midy = (points[i+2].y+points[i+1].y)/2;
-      var midPoint = {
-        "x":midx,
-        "y":midy,
+      var arbPoint = {
+        "x":arbx,
+        "y":arby,
       }
-      var midm = (points[i+2].y - points[i+1].y).toFixed(4)/(points[i+2].x - points[i+1].x).toFixed(4)
-      if (midm != Infinity || midm != -Infinity){
-        perpMidM = (1/midm) * -1;
-        perpMidB = perpMidM * midx - midy;
-        //find arbitrary other point
-        var arbx = midx+1;
-        var arby = perpMidM * arbx + perpMidB;
-
-        var arbPoint = {
-          "x":arbx,
-          "y":arby,
-        }
       var iPoint = intersectLineLine(points[i], points[i+1], midPoint, arbPoint)
       var c = points.length-1
       ctx.moveTo(points[c-1].x, points[c-1].y)
@@ -296,44 +325,12 @@ function drawPoints(ctx, points) {
         ctx.lineTo(points[c].x,points[c].y)
       }
       ctx.stroke()
-      }
-      
-
-
-      /*var i = points.length-3
-  
-      var m = (points[i+1].y - points[i].y).toFixed(4)/(points[i+1].x - points[i].x).toFixed(4)
-      if (m && m != Infinity && m != -Infinity){
-        // in case of a slope, find the equation of the line
-        var b = m*points[i].x - points[i].y
-
-        // in case of a slope, find the midpoint between the two current points
-        var midx = (points[i+2].x+points[i+1].x)/2,
-        var midy = (points[i+2].y+points[i+1].y)/2,
-        var midm = (points[i+2].y - points[i+1].y).toFixed(4)/(points[i+2].x - points[i+1].x).toFixed(4)
-        if (midm != Infinity || midm != -Infinity){
-          perpMidM = (1/midm) * -1;
-          perpMidB = perpMidM * midx - midy;
-
-        }//handle the infinity case
-        console.log(m.toFixed(4));
-      } else {
-        console.log("straight line case")
-      }*/
     }
-    //ctx.moveTo(points[0].x, points[0].y);
+    ctx.closePath()
 
-    /*for (i = 1; i < points.length - 2; i++) {
-        var c = (points[i].x + points[i + 1].x) / 2,
-            d = (points[i].y + points[i + 1].y) / 2;
-        ctx.quadraticCurveTo(points[i].x, points[i].y, c, d)
-    }*/
-    //if the length of 
-    //ctx.moveTo(points[i].x, points[i].y);
-    //ctx.quadraticCurveTo(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y), ctx.stroke()
+  }
+
 }
-
-
 function intersectLineLine (a1, a2, b1, b2) {
     var result;
     var ua_t = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x);
@@ -348,7 +345,6 @@ function intersectLineLine (a1, a2, b1, b2) {
 
     if (u_b != 0 && u_b != NaN && u_b != Infinity && u_b != -Infinity && ua_t != -Infinity && ua_t != Infinity&& ub_t != -Infinity && ub_t != Infinity) {
 
-      
         var ua = ua_t / u_b;
         var ub = ub_t / u_b;
         if (Math.abs(ua) > 3 || Math.abs(ub) > 3){
@@ -365,7 +361,6 @@ function intersectLineLine (a1, a2, b1, b2) {
             result = "straight"
         } }
     } else {
-      console.log("going in")
         if (ua_t == 0 || ub_t == 0) {
             result = "straight"
         } else {
@@ -391,11 +386,23 @@ setTimeout(function() {
     canvas.addEventListener('touchmove', ev_canvas, false);
     canvas.addEventListener('mouseup', ev_canvas, false);
     canvas.addEventListener('touchend', ev_canvas, false);
-
     $("#colors li").click( function(){
-      console.log('changing colors')
-      var func = PEN['changecolor']
-      func($(this).css("color"))
+      if (this.id =="erase"){
+        var sizefunc = PEN['setsize']
+        sizefunc(40)
+        var func = PEN['changecolor']
+        
+        func($(this).css("color"))
+        
+      } else {
+        var func = PEN['changecolor']
+        var sizefunc = PEN['setsize']
+        sizefunc(1)
+        
+        func($(this).css("color"))
+      }
+
+
     })
 
 }, 500);
