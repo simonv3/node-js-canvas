@@ -7,7 +7,8 @@ $(function(){
 	}
 
 	// The URL of your web server (the port is set in app.js)
-	var url = 'http://localhost:8080';
+  var url = document.url;
+
 
 	var doc = $(document),
 		win = $(window),

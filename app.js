@@ -24,14 +24,14 @@ function handler (request, response) {
         fileServer.serve(request, response);
     });
 }
-io.configure(function () { 
-  io.set("transports", ["xhr-polling"]); 
-  io.set("polling duration", 10); 
+io.configure(function () {
+  io.set("transports", ["xhr-polling"]);
+  io.set("polling duration", 10);
+  io.set('log level', 1);
 });
 
 
 // Delete this row if you want to see debug messages
-io.set('log level', 1);
 
 // Listen for incoming connections from clients
 io.sockets.on('connection', function (socket) {
