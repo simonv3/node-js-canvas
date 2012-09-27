@@ -13,7 +13,11 @@ $(function(){
   var doc = $(document),
   win = $(window),
   canvas = $('#paper'),
-  ctx = canvas[0].getContext('2d'),
+  ctx = canvas[0].getContext('2d')
+  ctx.strokeStyle = "#888";
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
   instructions = $('#instructions');
 
   // Generate an unique ID
@@ -55,10 +59,12 @@ $(function(){
   });
 
   var prev = {};
+  var twoprev = {}
 
   canvas.on('mousedown',function(e){
     e.preventDefault();
     drawing = true;
+
     prev.x = e.pageX;
     prev.y = e.pageY;
   });
@@ -95,7 +101,8 @@ $(function(){
     if(drawing){
 
       drawLine(prev.x, prev.y, e.pageX, e.pageY);
-
+      twoprev.x = prev.x
+      twoprev.y = prev.y
       prev.x = e.pageX;
       prev.y = e.pageY;
     }
@@ -143,13 +150,11 @@ $(function(){
   },10000);
 
   function drawLine(fromx, fromy, tox, toy){
-    ctx.strokeStyle = "#333";
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.lineWidth = 2;
+    ctx.beginPath();
     ctx.moveTo(fromx, fromy);
     ctx.lineTo(tox, toy);
     ctx.stroke();
+    ctx.closePath();
     
   }
 
