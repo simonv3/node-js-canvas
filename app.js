@@ -10,7 +10,12 @@ var fileServer = new static.Server('./');
 	
 // This is the port for our web server.
 // you will need to go to http://localhost:8080 to see it
-app.listen(8080);
+var port = process.env.PORT || 5000;
+app.listen(port, function() {
+  console.log("Listening on " + port);
+});
+
+
 
 // If the URL of the socket server is opened in a browser
 function handler (request, response) {
@@ -19,6 +24,11 @@ function handler (request, response) {
         fileServer.serve(request, response);
     });
 }
+io.configure(function () { 
+  io.set("transports", ["xhr-polling"]); 
+  io.set("polling duration", 10); 
+});
+
 
 // Delete this row if you want to see debug messages
 io.set('log level', 1);
