@@ -93,7 +93,7 @@ $(function(){
   });
 
 
-  doc.bind('mouseup touchcancel touchend',function(){
+  doc.bind('mouseup mouseleave touchcancel touchend',function(){
     drawing = false;
     socket.emit('endDrawing',
         myID
@@ -105,13 +105,7 @@ $(function(){
   var lastEmit = $.now();
 
   doc.on('mousemove',function(e){
- 
-
-    // Draw a line for the current user's movement, as it is
-    // not received in the socket.on('moving') event above
-
-    if(drawing){
-   if($.now() - lastEmit > 30){
+    if($.now() - lastEmit > 30){
       socket.emit('mousemove',{
         'x': e.pageX,
         'y': e.pageY,
@@ -120,6 +114,12 @@ $(function(){
       });
       lastEmit = $.now();
     }
+
+
+    // Draw a line for the current user's movement, as it is
+    // not received in the socket.on('moving') event above
+
+    if(drawing){
       drawLine(prev.x, prev.y, e.pageX, e.pageY);
       twoprev.x = prev.x
       twoprev.y = prev.y

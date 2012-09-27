@@ -54,16 +54,20 @@ io.sockets.on('connection', function (socket) {
   // Start listening for mouse move events
   socket.on('mousemove', function (data) {
     console.log('moving');
-    
-    currentLine[data.id-1].push(data)
+    if (currentLine[data.id-1] != undefined && data.drawing == true){
+      currentLine[data.id-1].push(data)
+    }
     // This line sends the event (broadcasts it)
     // to everyone except the originating client.
     socket.broadcast.emit('moving', data);
   });
   socket.on('endDrawing', function(data){
-    drawnLines.push(currentLine[data-1])
+    if (currentLine!=[] || currentLine!= null){
+      drawnLines.push(currentLine[data-1])
+    }
     console.log("ending drawing")
     console.log(drawnLines)
     currentLine[data-1] = []
+    socket.broadcast.emit('moving', data);
   })
 });
