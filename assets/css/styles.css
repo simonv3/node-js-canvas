@@ -15,7 +15,6 @@
 
 
 html{
-	background:url('../img/bg.png') repeat #e4e4e4;
 		
 	/* This will hide the extra canvas if the screen is small */
 	overflow:hidden;
