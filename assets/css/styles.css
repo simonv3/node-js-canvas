@@ -80,6 +80,9 @@ h3{
 
 canvas{
   cursor:pointer;
+  background:#f4f4f4;
+  margin:10% auto;
+  display:block;
 }
 
 canvas:active{

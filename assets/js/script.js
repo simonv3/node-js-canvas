@@ -40,6 +40,10 @@ function Pen(canvas) {
     this.points = []
     this.others = []
 
+    this.otherDrawing = false
+    this.otherDrawingQueue = []
+
+
     //tell the socket you are joining, and register your id
 
     socket.emit("joining")
@@ -71,25 +75,36 @@ function Pen(canvas) {
 
 
     socket.on('othersStartDrawing', function(data, currentLineID){
-      tool.others[data.id] = []
-      tool.others[data.id].push({
-        x: data.x,
-        y: data.y,
-        lineID: currentLineID,
-        color:data.color,
-        size:data.size,
-      })
+      if (tool.otherDrawing == false){
+        tool.others[data.id] = []
+        tool.otherDrawing = true
+        tool.others[data.id].push({
+          x: data.x,
+          y: data.y,
+          lineID: currentLineID,
+          color:data.color,
+          size:data.size,
+        })
+      } else {
+        tool.otherDrawingQueue[data.id].push({
+          x: data.x,
+          y: data.y,
+          lineID: currentLineID,
+          color:data.color,
+          size:data.size,
+        })
+      }
     })
 
     // the function that starts the drawing
     function startPath(ev){
-      var initX = ev.pageX
-      var initY = ev.pageY
+      var initX = ev.pageX - canvas.offsetLeft
+      var initY = ev.pageY - canvas.offsetTop
 
       //if the type of the event is touchstart, look for touches
       if (ev.type === "touchstart"){
-        initX= ev.touches[0].pageX
-        initY = ev.touches[0].pageY
+        initX= ev.touches[0].pageX - canvas.offsetLeft
+        initY = ev.touches[0].pageY - canvas.offsetTop
       }
       tool.points.push({
             x: initX,
@@ -116,28 +131,36 @@ function Pen(canvas) {
 
     //when we receive a moving message
     socket.on('othersMoving', function(data){
-      //context.clearRect(0, 0, width, height);
-      //context.drawImage(memCanvas, 0, 0);
-      tool.others[data.id].push({
-        x: data.x,
-        y: data.y,
-        lineID:tool.others[data.id][0].lineID,
-        color:data.color,
-        size:tool.size,
-      })
+      if (tool.otherDrawing == false){
+        tool.others[data.id].push({
+          x: data.x,
+          y: data.y,
+          lineID:tool.others[data.id][0].lineID,
+          color:data.color,
+          size:tool.size,
+        })
+      } else {
+        tool.othersDrawingQueue[data.id].push({
+          x: data.x,
+          y: data.y,
+          lineID:tool.others[data.id][0].lineID,
+          color:data.color,
+          size:tool.size,
+        })
+      }
       drawPoints(canvas, tool.others[data.id])
     })
 
     function movingPath(ev){
         if (tool.started) {
           //capture currentX and Y
-          var currentX = ev.pageX
-          var currentY = ev.pageY
+          var currentX = ev.pageX - canvas.offsetLeft
+          var currentY = ev.pageY - canvas.offsetTop
           if (ev.type === "touchmove"){
-            currentX = ev.touches[0].pageX
-            currentY = ev.touches[0].pageY
+            currentX = ev.touches[0].pageX - canvas.offsetLeft
+            currentY = ev.touches[0].pageY - canvas.offsetTop
           }
-          if($.now() - lastEmit > 10){
+          if($.now() - lastEmit > 30){
             socket.emit('mousemove', {
               'x': currentX + 0.5,
               'y': currentY,
@@ -148,10 +171,6 @@ function Pen(canvas) {
             lastEmit = $.now()
           }
 
-            //context.clearRect(0, 0, width, height);
-            // put back the saved content
-            //context.drawImage(memCanvas, 0, 0);
-          console.log("tool size " + tool.size);
             tool.points.push({
                 x: currentX,
                 y: currentY,
@@ -163,7 +182,6 @@ function Pen(canvas) {
     }
 
     //treat touchmove and mousemove the same
-    //this.touchmove = function(ev) { movingPath(ev) }
 
     this.mousemove = function(ev) { movingPath(ev) };
 
@@ -171,6 +189,10 @@ function Pen(canvas) {
         //memCtx.clearRect(0,0, width, height);
         //memCtx.drawImage(canvas, 0, 0);
         tool.others[data] = [];
+        if (tool.othersDrawing == true){
+          //draw everything in the queue
+          tool.othersDrawing = false
+        }
     })
 
     function endPath(ev){
@@ -278,7 +300,7 @@ function drawPoints(canvas, points) {
   ctx.beginPath()
   ctx.strokeStyle = points[0].color
   ctx.lineWidth = points[0].size
-  console.log(points[0])
+  //console.log(points[0])
   //get the slope of a the previous segment.
   if (points.length > 3){
 
@@ -376,8 +398,6 @@ function intersectLineLine (a1, a2, b1, b2) {
 setTimeout(function() {
     // Bind canvas to listeners
     var canvas = document.getElementById('paper');
-    canvas.width = $(window).width()
-    canvas.height = $(window).height()-46
     PEN = new Pen(canvas);
 
 
