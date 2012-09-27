@@ -125,7 +125,7 @@ function Pen(canvas) {
         color:data.color,
         size:tool.size,
       })
-      drawPoints(context, tool.others[data.id])
+      drawPoints(canvas, tool.others[data.id])
     })
 
     function movingPath(ev){
@@ -158,7 +158,7 @@ function Pen(canvas) {
                 color:tool.color,
                 size:tool.size,
             });
-            drawPoints(context, tool.points);
+            drawPoints(canvas, tool.points);
         }
     }
 
@@ -267,7 +267,9 @@ function drawPastLines(ctx, points){
   // curve through the last two points
 }
 
-function drawPoints(ctx, points) {
+function drawPoints(canvas, points) {
+    var ctx = canvas.getContext('2d');
+  
     /*if (points.length < 6) {
         var b = points[0];
         ctx.beginPath(), ctx.arc(b.x, b.y, ctx.lineWidth / 2, 0, Math.PI * 2, !0), ctx.closePath(), ctx.fill();
