@@ -21,7 +21,7 @@ $(function(){
   instructions = $('#instructions');
 
   // Generate an unique ID
-  var id = Math.round($.now()*Math.random());
+  var myID;
 
   // A flag for drawing activity
   var drawing = false;
@@ -30,6 +30,20 @@ $(function(){
   var cursors = {};
 
   var socket = io.connect(url);
+  socket.emit('joining');
+  socket.on('joinedCallback', function (assignedID, drawnLines){
+    myID = assignedID;
+    console.log(drawnLines)
+    if (drawnLines && drawnLines.length > 0){
+      for (var i = 0; i < drawnLines.length; i++){
+        if (drawnLines[i].length > 0 ){
+          drawPastLines(drawnLines[i]);
+        }
+      }
+    }
+    console.log("your id is " + assignedID)
+  })
+
 
   socket.on('moving', function (data) {
 
@@ -62,6 +76,7 @@ $(function(){
   var twoprev = {}
 
   canvas.on('mousedown',function(e){
+
     e.preventDefault();
     drawing = true;
 
@@ -70,6 +85,7 @@ $(function(){
   });
 
   canvas.on('touchstart',function(e){
+
     e.preventDefault();
     drawing = true;
     prev.x = e.originalEvent.touches[0].pageX;
@@ -77,29 +93,33 @@ $(function(){
   });
 
 
-  doc.bind('mouseup mouseleave touchcancel touchend',function(){
+  doc.bind('mouseup touchcancel touchend',function(){
     drawing = false;
-    console.log(prev.x)
+    socket.emit('endDrawing',
+        myID
+      );
   });
+
+  //what about mouseleave?
 
   var lastEmit = $.now();
 
   doc.on('mousemove',function(e){
-    if($.now() - lastEmit > 30){
-      socket.emit('mousemove',{
-        'x': e.pageX,
-        'y': e.pageY,
-        'drawing': drawing,
-        'id': id
-      });
-      lastEmit = $.now();
-    }
+ 
 
     // Draw a line for the current user's movement, as it is
     // not received in the socket.on('moving') event above
 
     if(drawing){
-
+   if($.now() - lastEmit > 30){
+      socket.emit('mousemove',{
+        'x': e.pageX,
+        'y': e.pageY,
+        'drawing': drawing,
+        'id': myID 
+      });
+      lastEmit = $.now();
+    }
       drawLine(prev.x, prev.y, e.pageX, e.pageY);
       twoprev.x = prev.x
       twoprev.y = prev.y
@@ -114,7 +134,7 @@ $(function(){
         'x': e.originalEvent.touches[0].pageX,
         'y': e.originalEvent.touches[0].pageY,
         'drawing': drawing,
-        'id': id
+        'id': myID 
       });
       lastEmit = $.now();
     }
@@ -155,7 +175,26 @@ $(function(){
     ctx.lineTo(tox, toy);
     ctx.stroke();
     ctx.closePath();
-    
+  }
+
+  function drawPastLines(points){
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y);
+    if (points.length == 2 ){
+      ctx.lineTo(points[1].x,points[1].y)
+    } else if (points.length == 1){
+    } else {
+
+      for (i = 1; i < points.length - 2; i ++)
+      {
+        var xc = (points[i].x + points[i + 1].x) / 2;
+        var yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+      }
+      ctx.quadraticCurveTo(points[i].x, points[i].y, points[i+1].x,points[i+1].y);
+    }
+    ctx.stroke()
+    ctx.closePath()
   }
 
 });

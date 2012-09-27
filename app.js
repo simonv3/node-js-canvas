@@ -30,17 +30,40 @@ io.configure(function () {
   io.set('log level', 1);
 });
 
+var currentID = 1;
+var userIDs= new Array()
+var currentLine = []
+var drawnLines = []
 
 // Delete this row if you want to see debug messages
 
 // Listen for incoming connections from clients
 io.sockets.on('connection', function (socket) {
 
-	// Start listening for mouse move events
-	socket.on('mousemove', function (data) {
-		
-		// This line sends the event (broadcasts it)
-		// to everyone except the originating client.
-		socket.broadcast.emit('moving', data);
-	});
+  socket.on('joining', function(){
+
+    userIDs.push(currentID)
+    console.log("user # " + currentID + " joined")
+    currentLine.push([])
+    console.log(currentLine)
+
+    console.log(drawnLines)
+    socket.emit('joinedCallback', currentID, drawnLines)
+    currentID += 1
+  });
+  // Start listening for mouse move events
+  socket.on('mousemove', function (data) {
+    console.log('moving');
+    
+    currentLine[data.id-1].push(data)
+    // This line sends the event (broadcasts it)
+    // to everyone except the originating client.
+    socket.broadcast.emit('moving', data);
+  });
+  socket.on('endDrawing', function(data){
+    drawnLines.push(currentLine[data-1])
+    console.log("ending drawing")
+    console.log(drawnLines)
+    currentLine[data-1] = []
+  })
 });
