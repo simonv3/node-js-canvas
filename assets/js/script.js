@@ -8,11 +8,16 @@ $(function(){
 
   // The URL of your web server (the port is set in app.js)
   var url = document.url;
-  $("footer li").click( function(){
-    console.log($(this));
+  $("footer #colors li").click( function(){
     currentColor = $(this).css("backgroundColor");
-    console.log(currentColor);
   })
+
+  $("footer #sizes li").click( function(){
+    currentSize = $(this).attr("size");
+    console.log(currentSize);
+  })
+
+
 
   var doc = $(document),
   win = $(window),
@@ -196,7 +201,7 @@ $(function(){
 
   function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
-    console.log(color);
+    console.log(size);
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);
