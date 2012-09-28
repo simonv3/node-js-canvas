@@ -8,7 +8,11 @@ $(function(){
 
   // The URL of your web server (the port is set in app.js)
   var url = document.url;
-
+  $("footer li").click( function(){
+    console.log($(this));
+    currentColor = $(this).css("backgroundColor");
+    console.log(currentColor);
+  })
 
   var doc = $(document),
   win = $(window),
@@ -25,7 +29,8 @@ $(function(){
 
   // A flag for drawing activity
   var drawing = false;
-
+  var currentColor = "#888";
+  var currentSize = 2;
   var clients = {};
   var cursors = {};
 
@@ -72,7 +77,7 @@ $(function(){
       // Draw a line on the canvas. clients[data.id] holds
       // the previous position of this user's mouse pointer
 
-      drawLine({"x":clients[data.id].prevx, "y":clients[data.id].prevy}, clients[data.id].x, clients[data.id].y, data.x, data.y);
+      drawLine(data.size, data.color, {"x":clients[data.id].prevx, "y":clients[data.id].prevy}, clients[data.id].x, clients[data.id].y, data.x, data.y);
     }
 
     // Saving the current client state
@@ -120,7 +125,9 @@ $(function(){
         'prevx' : twoprev.x,
         'prevy' : twoprev.y,
         'drawing': drawing,
-        'id': myID 
+        'id': myID,
+        'color': currentColor,
+        'size':currentSize,
       });
       lastEmit = $.now();
     }
@@ -130,7 +137,7 @@ $(function(){
     // not received in the socket.on('moving') event above
 
     if(drawing){
-      drawLine(twoprev, prev.x, prev.y, e.pageX, e.pageY);
+      drawLine(currentSize, currentColor, twoprev, prev.x, prev.y, e.pageX, e.pageY);
       twoprev.x = prev.x
       twoprev.y = prev.y
       prev.x = e.pageX;
@@ -141,10 +148,14 @@ $(function(){
   doc.on('touchmove',function(e){
     if($.now() - lastEmit > 30){
       socket.emit('mousemove',{
+        'prevx' : twoprev.x,
+        'prevy': twoprev.y,
         'x': e.originalEvent.touches[0].pageX,
         'y': e.originalEvent.touches[0].pageY,
         'drawing': drawing,
-        'id': myID 
+        'id': myID,
+        'color':currentColor,
+        'size':currentSize,
       });
       lastEmit = $.now();
     }
@@ -154,7 +165,7 @@ $(function(){
 
     if(drawing){
 
-      drawLine(twoprev, prev.x, prev.y, e.pageX, e.pageY);
+      drawLine(currentSize, currentColor, twoprev, prev.x, prev.y, e.pageX, e.pageY);
       twoprev.x = prev.x
       twoprev.y = prev.y
 
@@ -183,8 +194,11 @@ $(function(){
 
   // get a base64 every 60 seconds
 
-  function drawLine(twoprev, fromx, fromy, tox, toy){
+  function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
+    console.log(color);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);
     if (twoprev){
       var midPoint = {
@@ -224,6 +238,8 @@ $(function(){
   }
 
   function drawPastLines(points){
+    ctx.strokeStyle = points[0].color
+    ctx.lineWidth = points[0].size
     ctx.beginPath()
     ctx.moveTo(points[0].x, points[0].y);
     if (points.length == 2 ){
@@ -248,23 +264,15 @@ function intersectLineLine (a1, a2, b1, b2) {
     var ua_t = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x);
     var ub_t = (a2.x - a1.x) * (a1.y - b1.y) - (a2.y - a1.y) * (a1.x - b1.x);
     var u_b = (b2.y - b1.y) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.y - a1.y);
-    
-    /*if (ua_t > 10){
-      console.log("new set")
-      console.log(b1.x + " " + b1.y + "; " + b1.x + " " + b1.y);
-      console.log(a2.x + " " + a1.x)
-    }*/
 
     if (u_b != 0 && u_b != NaN && u_b != Infinity && u_b != -Infinity && ua_t != -Infinity && ua_t != Infinity&& ub_t != -Infinity && ub_t != Infinity) {
 
         var ua = ua_t / u_b;
         var ub = ub_t / u_b;
         if (Math.abs(ua) > 3 || Math.abs(ub) > 3){
-          //console.log(a1.x +" "+ a1.y + " " + ua_t + " / " + u_b)
           result="straight"
         } else {
         if(ua && ub){
-        //if (0 <= ua && ua <= 1 && 0 <= ub && ub <= 1) {
             result = {
               "x":a1.x + ua * (a2.x - a1.x),
               "y":a1.y + ua * (a2.y - a1.y),
