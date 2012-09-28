@@ -40,22 +40,28 @@ var drawnLines = []
 // Listen for incoming connections from clients
 io.sockets.on('connection', function (socket) {
 
+  setInterval(function(){
+    socket.emit('take_screenshot')
+  }, 60000);
+
+  socket.on('screenshot', function(imagedata){
+    //console.log(imagedata)
+
+  })
   socket.on('joining', function(){
 
     userIDs.push(currentID)
     console.log("user # " + currentID + " joined")
     currentLine.push([])
-    console.log(currentLine)
-
-    console.log(drawnLines)
     socket.emit('joinedCallback', currentID, drawnLines)
     currentID += 1
   });
+
   // Start listening for mouse move events
   socket.on('mousemove', function (data) {
-    console.log('moving');
     if (currentLine[data.id-1] != undefined && data.drawing == true){
       currentLine[data.id-1].push(data)
+      console.log(data);
     }
     // This line sends the event (broadcasts it)
     // to everyone except the originating client.
@@ -65,8 +71,6 @@ io.sockets.on('connection', function (socket) {
     if (currentLine!=[] || currentLine!= null){
       drawnLines.push(currentLine[data-1])
     }
-    console.log("ending drawing")
-    console.log(drawnLines)
     currentLine[data-1] = []
     socket.broadcast.emit('moving', data);
   })
