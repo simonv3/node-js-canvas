@@ -51,6 +51,7 @@ io.sockets.on('connection', function (socket) {
       var base64Data = imagedata.image.replace(/^data:image\/png;base64,/,""),
       dataBuffer = new Buffer(base64Data, 'base64');
       fs.writeFile("./screenshots/screenshot_" + imagedata.date + ".png", dataBuffer, function(err){});
+      console.log("./screenshots/screenshot_" + imagedata.date + ".png")
     }
     //var image = imagedata.image
   })
@@ -68,7 +69,6 @@ io.sockets.on('connection', function (socket) {
   socket.on('mousemove', function (data) {
     if (currentLine[data.id-1] != undefined && data.drawing == true){
       currentLine[data.id-1].push(data)
-      console.log(data);
     }
     // This line sends the event (broadcasts it)
     // to everyone except the originating client.
