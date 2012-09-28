@@ -49,6 +49,7 @@ $(function(){
         }
       }
     }
+    document.getElementById("page_loader").style.display = 'none';
     console.log("your id is " + assignedID)
   })
 
@@ -56,14 +57,14 @@ $(function(){
 
     if(! (data.id in clients)){
       // a new user has come online. create a cursor for them
-      cursors[data.id] = $('<div class="cursor">').appendTo('#cursors');
+      //cursors[data.id] = $('<div class="cursor">').appendTo('#cursors');
     }
 
     // Move the mouse pointer
-    cursors[data.id].css({
+    /*cursors[data.id].css({
       'left' : data.x,
       'top' : data.y
-    });
+    });*/
 
     // Is the user drawing?
     if(data.drawing && clients[data.id]){
