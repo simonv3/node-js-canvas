@@ -175,7 +175,7 @@ $(function(){
 
         //cursors[ident].remove();
         delete clients[ident];
-        delete cursors[ident];
+        //delete cursors[ident];
       }
     }
 
