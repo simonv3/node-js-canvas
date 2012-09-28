@@ -173,7 +173,7 @@ $(function(){
         // Last update was more than 10 seconds ago. 
         // This user has probably closed the page
 
-        cursors[ident].remove();
+        //cursors[ident].remove();
         delete clients[ident];
         delete cursors[ident];
       }
