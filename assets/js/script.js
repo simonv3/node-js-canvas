@@ -46,7 +46,7 @@ $(function(){
     var canvasImg = document.getElementById("paper")
     imagedata = canvasImg.toDataURL();
     console.log("sending screenshot")
-    socket.emit('screenshot', imagedata)
+    socket.emit('screenshot', {'image':imagedata,'date':$.now()})
   })
 
 
