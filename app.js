@@ -46,7 +46,7 @@ io.sockets.on('connection', function (socket) {
   }, 60000);
 
   socket.on('screenshot', function(imagedata){
-    console.log(imagedata.image)
+    //console.log(imagedata.image)
     if (imagedata.image != undefined) {
       var base64Data = imagedata.image.replace(/^data:image\/png;base64,/,""),
       dataBuffer = new Buffer(base64Data, 'base64');
