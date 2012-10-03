@@ -190,7 +190,7 @@ $(function(){
 
     if(drawing){
 
-      drawLine(currentSize, currentColor, twoprev, prev.x, prev.y, e.pageX, e.pageY);
+      drawLine(currentSize, currentColor, twoprev, prev.x, prev.y, e.originalEvent.touches[0].pageX, e.originalEvent.touches[0].pageY);
       twoprev.x = prev.x
       twoprev.y = prev.y
 
@@ -222,6 +222,8 @@ $(function(){
   function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
     //console.log(size);
+    //
+    console.log(tox + " " + toy)
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);
@@ -249,12 +251,12 @@ $(function(){
 
           ctx.quadraticCurveTo(drawMidX, drawMidY, tox, toy)
         } else {
+          
           ctx.lineTo(tox, toy)
         }
       } else {
         ctx.lineTo(tox, toy)
       }
-
     } else {
       ctx.lineTo(tox, toy);
     }
