@@ -36,13 +36,6 @@ a:hover{
 	text-decoration:none;
 }
 
-section, footer, header{
-	display: block;
-}
-canvas{
-
-}
-
 div#page_loader {
   position: absolute;
   top: 0;
@@ -64,6 +57,17 @@ div#page_loader img{
 /*-------------------------
 	Main Area
 --------------------------*/
+.banner{
+  position:absolute;
+  top:0;
+  width:238px;
+  height:167px;
+  display:block;
+}
+
+canvas{
+
+}
 
 /*----------------------------
 	The Footer
@@ -76,7 +80,7 @@ footer{
   box-shadow: 0 -1px 2px rgba(0,0,0,0.4);
   height: 45px;
   left: 0;
-  position: fixed;
+  position: absolute;
   width: 100%;
   z-index: 100000;
 }
