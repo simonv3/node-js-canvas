@@ -14,7 +14,7 @@ $(function(){
 
   $("footer #sizes li").click( function(){
     currentSize = $(this).attr("size");
-    console.log(currentSize);
+    //console.log(currentSize);
   })
 
 
@@ -45,7 +45,7 @@ $(function(){
   socket.on('take_screenshot', function(data){
     var canvasImg = document.getElementById("paper")
     imagedata = canvasImg.toDataURL();
-    console.log("sending screenshot")
+    //console.log("sending screenshot")
     socket.emit('screenshot', {'image':imagedata,'date':$.now()})
   })
 
@@ -70,48 +70,68 @@ $(function(){
       //cursors[data.id] = $('<div class="cursor">').appendTo('#cursors');
     }
 
-    // Move the mouse pointer
-    /*cursors[data.id].css({
-      'left' : data.x,
-      'top' : data.y
-    });*/
-
     // Is the user drawing?
     if(data.drawing && clients[data.id]){
 
       // Draw a line on the canvas. clients[data.id] holds
       // the previous position of this user's mouse pointer
-
       drawLine(data.size, data.color, {"x":clients[data.id].prevx, "y":clients[data.id].prevy}, clients[data.id].x, clients[data.id].y, data.x, data.y);
     }
 
     // Saving the current client state
+
     clients[data.id] = data;
     clients[data.id].updated = $.now();
   });
 
+  socket.on('startLine', function(data){
+    console.log("starting remote touch")
+    console.log(clients[data])
+  })
+
+  socket.on('endLine', function(data){
+    console.log(clients[data])
+    console.log("ended remote touch")
+    if (clients[data] != null){
+      clients[data].x = null;
+      clients[data].y = null;
+      clients[data].prevx = null;
+      clients[data].prevy = null;
+
+      
+    }
+  })
+
+
   var prev = {};
   var twoprev = {}
 
-  canvas.on('mousedown',function(e){
-
+  canvas.on('mousedown touchstart',function(e){
     e.preventDefault();
+    
+    if(e.type == 'touchstart'){
+      prev.x = e.originalEvent.touches[0].pageX;
+      prev.y = e.originalEvent.touches[0].pageY;
+    } else {
+      prev.x = e.pageX;
+      prev.y = e.pageY;
+    }
+    socket.emit('mousemove',{
+        'x': prev.x,
+        'y': prev.y,
+        'drawing': drawing,
+        'id': myID,
+        'color': currentColor,
+        'size':currentSize,
+      });
     drawing = true;
+    //socket.emit('startDrawing', myID);
 
-    prev.x = e.pageX;
-    prev.y = e.pageY;
   });
 
-  canvas.on('touchstart',function(e){
-
-    e.preventDefault();
-    drawing = true;
-    prev.x = e.originalEvent.touches[0].pageX;
-    prev.y = e.originalEvent.touches[0].pageY;
-  });
 
 
-  doc.bind('mouseup mouseleave touchcancel touchend',function(){
+  doc.bind('mouseup mouseleave touchend',function(){
     drawing = false;
     socket.emit('endDrawing',
         myID
@@ -201,7 +221,7 @@ $(function(){
 
   function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
-    console.log(size);
+    //console.log(size);
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);

@@ -52,7 +52,7 @@ io.sockets.on('connection', function (socket) {
       dataBuffer = new Buffer(base64Data, 'base64');
       //uncomment this line to enable writing of files
       //fs.writeFile("./screenshots/screenshot_" + imagedata.date + ".png", dataBuffer, function(err){});
-      console.log("./screenshots/screenshot_" + imagedata.date + ".png")
+      //console.log("./screenshots/screenshot_" + imagedata.date + ".png")
     }
     //var image = imagedata.image
   })
@@ -75,11 +75,16 @@ io.sockets.on('connection', function (socket) {
     // to everyone except the originating client.
     socket.broadcast.emit('moving', data);
   });
+
+  socket.on('startDrawing', function(data){
+    socket.broadcast.emit('startLine', data);
+  })
   socket.on('endDrawing', function(data){
     if (currentLine!=[] || currentLine!= null){
       drawnLines.push(currentLine[data-1])
     }
+    console.log(data);
     currentLine[data-1] = []
-    socket.broadcast.emit('moving', data);
+    socket.broadcast.emit('endLine', data);
   })
 });
