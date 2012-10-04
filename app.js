@@ -2,13 +2,25 @@
 
 var app = require('http').createServer(handler),
 	io = require('socket.io').listen(app),
+  url = require('url'),
 	static = require('node-static'), // for serving files
   fs = require('fs'); //for writing to files
+  Mustache = require('./public/assets/js/mustache');
 
 // This will make all the files in the current folder
 // accessible from the web
 
-var fileServer = new static.Server('./');
+var fileServer = new static.Server('./public');
+var files = {"all":[ ]};
+
+
+//set up actions?
+var screens_template = "Files <ul>{{#all}}<li><a href='{{url}}'>{{name}}</a></li>{{/all}}</ul>";
+
+
+
+
+
 
 // This is the port for our web server.
 // you will need to go to http://localhost:8080 to see it
@@ -20,11 +32,35 @@ app.listen(port, function() {
 
 // If the URL of the socket server is opened in a browser
 function handler (request, response) {
-
-	request.addListener('end', function () {
-        fileServer.serve(request, response);
+  request.addListener('end', function () {
+    if (request.url == "/screens/"){
+      displayScreens(request, response)
+    }
+      fileServer.serve(request, response);
     });
 }
+
+
+function displayScreens (request, response) {
+  fs.readdir("./public/screenshots/", function (err, screen_files){
+    files = {"all":[ ]};
+    console.log(files);
+    screen_files.forEach(function(file){
+      files['all'].push({url:"/screenshots/"+file, name:file})
+    })
+    console.log(files);
+    response.writeHead(200, {'Content-Type': 'text/html'});
+    template=screens_template.toString();// read below note why this is needed
+    response.write(Mustache.to_html(template, files));
+
+    response.end()
+
+  })
+
+
+
+}
+
 io.configure(function () {
   io.set("transports", ["xhr-polling"]);
   io.set("polling duration", 10);
@@ -51,8 +87,8 @@ io.sockets.on('connection', function (socket) {
       var base64Data = imagedata.image.replace(/^data:image\/png;base64,/,""),
       dataBuffer = new Buffer(base64Data, 'base64');
       //uncomment this line to enable writing of files
-      //fs.writeFile("./screenshots/screenshot_" + imagedata.date + ".png", dataBuffer, function(err){});
-      //console.log("./screenshots/screenshot_" + imagedata.date + ".png")
+      fs.writeFile("./public/screenshots/screenshot_" + imagedata.date + ".png", dataBuffer, function(err){console.log(err)});
+      //console.log("./public/screenshots/screenshot_" + imagedata.date + ".png")
     }
     //var image = imagedata.image
   })
