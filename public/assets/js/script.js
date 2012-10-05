@@ -60,7 +60,7 @@ $(function(){
       }
     }
     document.getElementById("page_loader").style.display = 'none';
-    console.log("your id is " + assignedID)
+    //console.log("your id is " + assignedID)
   })
 
   socket.on('moving', function (data) {
@@ -85,13 +85,13 @@ $(function(){
   });
 
   socket.on('startLine', function(data){
-    console.log("starting remote touch")
-    console.log(clients[data])
+    //console.log("starting remote touch")
+    //console.log(clients[data])
   })
 
   socket.on('endLine', function(data){
-    console.log(clients[data])
-    console.log("ended remote touch")
+    //console.log(clients[data])
+    //console.log("ended remote touch")
     if (clients[data] != null){
       clients[data].x = null;
       clients[data].y = null;
@@ -221,15 +221,12 @@ $(function(){
 
   function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
-    console.log("new line")
     //console.log(size);
     //console.log(tox + " " + toy)
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);
     if (twoprev){
-        console.log(fromx + ", " + fromy);
-      
       distance = Math.sqrt(Math.pow((fromx - twoprev.x),2) + Math.pow((fromy - twoprev.y),2))
       part_d = distance/4.00
       quadx = fromx + part_d
@@ -245,7 +242,6 @@ $(function(){
         quady = quadx * m + b
         console.log(quadx + ", " + quady);
         ctx.quadraticCurveTo(quadx, quady, tox, toy)
-        
       } else if (m == NaN){
         ctx.lineTo(tox, toy);
       } else {

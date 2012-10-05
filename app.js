@@ -17,10 +17,10 @@ var files = {"all":[ ]};
 //set up actions?
 var screens_template = "Files <ul>{{#all}}<li><a href='{{url}}'>{{name}}</a></li>{{/all}}</ul>";
 
-
-
-
-
+var currentID = 1;
+var userIDs= new Array()
+var currentLine = []
+var drawnLines = []
 
 // This is the port for our web server.
 // you will need to go to http://localhost:8080 to see it
@@ -35,25 +35,49 @@ function handler (request, response) {
   request.addListener('end', function () {
     if (request.url == "/screens/"){
       displayScreens(request, response)
+    } else if (request.url == "/clean-screen/"){
+      console.log('cleared screens')
+      currentID = 1;
+      userIDs= new Array()
+      currentLine = []
+      drawnLines = []
+    } else if (request.url == "/clean-files/"){
+      currentID = 1;
+      userIDs= new Array()
+      currentLine = []
+      drawnLines = []
+      deleteScreens(request, response)
     }
       fileServer.serve(request, response);
     });
+}
+
+function deleteScreens (request, response) {
+  fs.readdir("./public/screenshots/", function(err, screen_files){
+    files = {"all":[]}
+    if (screen_files != undefined){
+      screen_files.sort().forEach(function(file){
+        var path = "./public/screenshots/"+file;
+        console.log("deleting file " + path)
+        fs.unlink(path)
+      })
+    }
+  })
 }
 
 
 function displayScreens (request, response) {
   fs.readdir("./public/screenshots/", function (err, screen_files){
     files = {"all":[ ]};
-    console.log(files);
-    screen_files.sort().forEach(function(file){
-      files['all'].push({url:"/screenshots/"+file, name:file})
-    })
-    console.log(files);
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    template=screens_template.toString();// read below note why this is needed
-    response.write(Mustache.to_html(template, files));
-    response.end()
-
+    if (screen_files != undefined){
+      screen_files.sort().forEach(function(file){
+        files['all'].push({url:"/screenshots/"+file, name:file})
+      })
+      response.writeHead(200, {'Content-Type': 'text/html'});
+      template=screens_template.toString();// read below note why this is needed
+      response.write(Mustache.to_html(template, files));
+      response.end()
+    }
   })
 
 
@@ -66,10 +90,6 @@ io.configure(function () {
   io.set('log level', 1);
 });
 
-var currentID = 1;
-var userIDs= new Array()
-var currentLine = []
-var drawnLines = []
 
 // Delete this row if you want to see debug messages
 
