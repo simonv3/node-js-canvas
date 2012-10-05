@@ -163,8 +163,8 @@ $(function(){
 
     if(drawing){
       drawLine(currentSize, currentColor, twoprev, prev.x, prev.y, e.pageX, e.pageY);
-      twoprev.x = prev.x
-      twoprev.y = prev.y
+      twoprev.x = prev.x;
+      twoprev.y = prev.y;
       prev.x = e.pageX;
       prev.y = e.pageY;
     }
@@ -221,41 +221,40 @@ $(function(){
 
   function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
+    console.log("new line")
     //console.log(size);
-    console.log(tox + " " + toy)
+    //console.log(tox + " " + toy)
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);
-    /*if (twoprev){
-      var midPoint = {
-        "x": (fromx + tox)/2,
-        "y": (fromy + toy)/2,
-      }
-      var midm = (toy - fromy.toFixed(4))/(tox - fromx.toFixed(4))
-      if (midm != Infinity || midm != -Infinity){
-        perpMidM = (1/midm) * -1;
-        perpMidB = perpMidM * midPoint.x - midPoint.y
-        var arbx = midPoint.x+1;
-        var arby = perpMidM * arbx + perpMidM;
-        var arbPoint = {
-          "x":arbx,
-          "y":arby,
-        }
-        var iPoint = intersectLineLine(twoprev, {"x":fromx, "y":fromy}, midPoint, arbPoint)
-        if (iPoint != "straight"){
-          drawMidX = (midPoint.x + iPoint.x)/2
-          drawMidY = (midPoint.y + iPoint.y)/2
+    if (twoprev){
+        console.log(fromx + ", " + fromy);
+      
+      distance = Math.sqrt(Math.pow((fromx - twoprev.x),2) + Math.pow((fromy - twoprev.y),2))
+      part_d = distance/4.00
+      quadx = fromx + part_d
+      //twoprevy = twoprev.y
+      //console.log(parseFloat(twoprevy).toFixed(2))
+      m = (fromy - parseFloat(twoprev.y).toFixed(4))/(fromx - parseFloat(twoprev.x).toFixed(4))
 
-          ctx.quadraticCurveTo(drawMidX, drawMidY, tox, toy)
-        } else {
-          ctx.lineTo(tox, toy)
-        }
+      //not going straight, down, or up
+      /*if (!isNaN(m) && m != Infinity &&  m!= -Infinity){
+        console.log("going in with m = " + m);
+        b = fromy - m * fromx
+        console.log(b)
+        quady = quadx * m + b
+        console.log(quadx + ", " + quady);
+        ctx.quadraticCurveTo(quadx, quady, tox, toy)
+        
+      } else if (m == NaN){
+        ctx.lineTo(tox, toy);
       } else {
-        ctx.lineTo(tox, toy)
+        ctx.lineTo(tox, toy);
       }
-    } else {*/
+
+      } else {*/
       ctx.lineTo(tox, toy);
-    //}
+    }
     ctx.stroke();
     ctx.closePath();
   }

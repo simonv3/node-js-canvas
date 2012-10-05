@@ -120,6 +120,8 @@ footer ul li{
 
 footer ul#sizes li{
   vertical-align:middle;
+  width:auto;
+  height:auto;
 }
 
 
