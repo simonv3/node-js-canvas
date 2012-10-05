@@ -222,12 +222,11 @@ $(function(){
   function drawLine(size, color, twoprev, fromx, fromy, tox, toy){
     ctx.beginPath();
     //console.log(size);
-    //
     console.log(tox + " " + toy)
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
     ctx.moveTo(fromx, fromy);
-    if (twoprev){
+    /*if (twoprev){
       var midPoint = {
         "x": (fromx + tox)/2,
         "y": (fromy + toy)/2,
@@ -238,12 +237,10 @@ $(function(){
         perpMidB = perpMidM * midPoint.x - midPoint.y
         var arbx = midPoint.x+1;
         var arby = perpMidM * arbx + perpMidM;
-
         var arbPoint = {
           "x":arbx,
           "y":arby,
         }
-
         var iPoint = intersectLineLine(twoprev, {"x":fromx, "y":fromy}, midPoint, arbPoint)
         if (iPoint != "straight"){
           drawMidX = (midPoint.x + iPoint.x)/2
@@ -251,15 +248,14 @@ $(function(){
 
           ctx.quadraticCurveTo(drawMidX, drawMidY, tox, toy)
         } else {
-          
           ctx.lineTo(tox, toy)
         }
       } else {
         ctx.lineTo(tox, toy)
       }
-    } else {
+    } else {*/
       ctx.lineTo(tox, toy);
-    }
+    //}
     ctx.stroke();
     ctx.closePath();
   }

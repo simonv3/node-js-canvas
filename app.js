@@ -45,14 +45,13 @@ function displayScreens (request, response) {
   fs.readdir("./public/screenshots/", function (err, screen_files){
     files = {"all":[ ]};
     console.log(files);
-    screen_files.forEach(function(file){
+    screen_files.sort().forEach(function(file){
       files['all'].push({url:"/screenshots/"+file, name:file})
     })
     console.log(files);
     response.writeHead(200, {'Content-Type': 'text/html'});
     template=screens_template.toString();// read below note why this is needed
     response.write(Mustache.to_html(template, files));
-
     response.end()
 
   })
