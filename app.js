@@ -98,7 +98,7 @@ io.sockets.on('connection', function (socket) {
 
   setInterval(function(){
     socket.emit('take_screenshot')
-  }, 6000);
+  }, 60000);
 
   setInterval(function(){
     //just keeping everyone up to date yo. 
