@@ -98,15 +98,21 @@ io.sockets.on('connection', function (socket) {
 
   setInterval(function(){
     socket.emit('take_screenshot')
-  }, 60000);
+  }, 6000);
+
+  setInterval(function(){
+    //just keeping everyone up to date yo. 
+    socket.emit('force_refresh')
+  }, 3600000);
 
   socket.on('screenshot', function(imagedata){
     //console.log(imagedata.image)
     if (imagedata.image != undefined) {
+      console.log(imagedata.date);
       var base64Data = imagedata.image.replace(/^data:image\/png;base64,/,""),
       dataBuffer = new Buffer(base64Data, 'base64');
       //uncomment this line to enable writing of files
-      fs.writeFile("./public/screenshots/screenshot_" + imagedata.date + ".png", dataBuffer, function(err){console.log(err)});
+      fs.writeFile("./public/screenshots/screenshot_" + imagedata.date + ".png", dataBuffer, function(err){});
       //console.log("./public/screenshots/screenshot_" + imagedata.date + ".png")
     }
     //var image = imagedata.image
@@ -138,7 +144,6 @@ io.sockets.on('connection', function (socket) {
     if (currentLine!=[] || currentLine!= null){
       drawnLines.push(currentLine[data-1])
     }
-    console.log(data);
     currentLine[data-1] = []
     socket.broadcast.emit('endLine', data);
   })

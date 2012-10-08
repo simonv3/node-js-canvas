@@ -62,10 +62,21 @@ div#page_loader img{
 
 .banner{
   position:absolute;
-  top:0;
-  width:238px;
-  height:167px;
+  top:36px;
+  left:-56px;
+  width:247px;
+  height:49px;
   display:block;
+
+  -o-transform:rotate(-45deg);
+  -webkit-transform:rotate(-45deg);
+  transform:rotateX(-45deg);
+}
+
+.banner img{
+  width:247px;
+  height:49px;
+
 }
 
 canvas{

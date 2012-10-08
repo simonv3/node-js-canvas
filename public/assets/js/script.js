@@ -38,6 +38,7 @@ $(function(){
   var currentSize = 2;
   var clients = {};
   var cursors = {};
+  var lastEmit = $.now();
 
   var socket = io.connect(url);
   socket.emit('joining');
@@ -46,9 +47,13 @@ $(function(){
     var canvasImg = document.getElementById("paper")
     imagedata = canvasImg.toDataURL();
     //console.log("sending screenshot")
-    socket.emit('screenshot', {'image':imagedata,'date':$.now()})
+    console.log(lastEmit)
+    socket.emit('screenshot', {'image':imagedata,'date':lastEmit})
   })
 
+  socket.on('force_refresh', function(data){
+    window.location.reload();
+  })
 
   socket.on('joinedCallback', function (assignedID, drawnLines){
     myID = assignedID;
@@ -97,8 +102,6 @@ $(function(){
       clients[data].y = null;
       clients[data].prevx = null;
       clients[data].prevy = null;
-
-      
     }
   })
 
@@ -140,7 +143,6 @@ $(function(){
 
   //what about mouseleave?
 
-  var lastEmit = $.now();
 
   doc.on('mousemove',function(e){
     if($.now() - lastEmit > 30){
