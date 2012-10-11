@@ -41,7 +41,7 @@ function handler (request, response) {
       userIDs= new Array()
       currentLine = []
       drawnLines = []
-      io.socket.emit('force_refresh')
+      io.sockets.emit('force_refresh')
     } else if (request.url == "/clean-files/"){
       currentID = 1;
       userIDs= new Array()
